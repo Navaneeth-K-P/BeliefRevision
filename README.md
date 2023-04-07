@@ -1,0 +1,2 @@
+# BeliefRevision
+Belief Revision assignment 
