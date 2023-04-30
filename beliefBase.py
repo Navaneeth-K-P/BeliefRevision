@@ -29,6 +29,10 @@ class Belief_Base:
             print(f"The belief {belief} is present in the belief base")
         elif belief in self.consequence():
             print(f"The belief {belief} is not present in the belief base but it is a consequence of the belief base.")
+        elif self.entailement(belief):
+            print(f"The belief {belief} is not present in the belief base or in the consequence of the belief base but is entailed by the belief base")
+        else:
+            print("The belief is not entailed by the belief base")
     
 
     def add(self, belief, score):
@@ -103,14 +107,13 @@ class Belief_Base:
 
 
     def expansion(self, new_belief, score):
-        if self.entailement(new_belief):
-            self.add(new_belief, score)
-        else:
-            print("Entailment Fail")
+        self.add(new_belief, score)
+
 
 
     def revision(self, new_belief, score):
         bb_copy = deepcopy(self)
+        bb_old = deepcopy(self)
         # print("bb after copy",bb_copy.beliefBase)
         bb_copy.contract("~("+new_belief+")")
         # print("bb after contract",bb_copy.beliefBase)
@@ -118,12 +121,16 @@ class Belief_Base:
         # print("bb after exp",bb_copy.beliefBase)
         # print(bb_copy.beliefBase)
         k1 = bb_copy.check_success(new_belief,score)
-        k2 = bb_copy.check_inclusion(new_belief, score,self) 
-        k3 = bb_copy.check_vacuity(new_belief,score,self) 
+        k2 = bb_copy.check_inclusion(new_belief, score,bb_old) 
+        k3 = bb_copy.check_vacuity(new_belief,score,bb_old) 
         k4 = bb_copy.check_consistency(new_belief, score)
         # print(k1,k2,k3,k4)
         if (k1 and k2 and k3 and k4):
-            self = bb_copy
+            # print("Old BB: ", self.beliefBase)
+            self.contract("~("+new_belief+")")
+            # print("After contraction: ", self.beliefBase)
+            self.expansion(new_belief, score)
+            # print("After Expansion: ", self.beliefBase)
             print("Revision Done")
         else:
             print("Revision failed")
@@ -396,6 +403,7 @@ class Belief_Base:
     def check_vacuity(self, new_belief,score, old_belief_base):
         if old_belief_base.entailement("~(" + new_belief + ")"):
             print("~(" + new_belief + ") "+"is entailed by the old belief base. Hence, vacuity check is not performed")
+            return True
         else:
             # print(old_belief_base.beliefBase,self.beliefBase)
             old_belief_base.add(new_belief, score)
@@ -419,3 +427,4 @@ class Belief_Base:
                 return False
         else:
             print("The new belief is not satisfiable. Hence consistency check is not done")
+            return True
